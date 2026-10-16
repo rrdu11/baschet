@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Baschet Live – NBA și EuroLeague</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f3ef;--card:#fff;--tx:#1d1d1f;--mut:#6b6b70;--line:#e3e0da;--acc:#e8590c;--acc2:#1c4fd8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141416;--card:#1e1e22;--tx:#f1f1f3;--mut:#9a9aa3;--line:#33333a;--acc:#ff8a3d;--acc2:#6b93ff}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 0;max-width:900px;margin:0 auto}
+h1{margin:0;font-size:24px}
+.sub{color:var(--mut);font-size:13px;margin:2px 0 14px}
+.tabs{display:flex;gap:8px;max-width:900px;margin:0 auto;padding:0 16px}
+.tab{flex:1;padding:12px;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--c);color:#fff;border-color:var(--c)}
+main{max-width:900px;margin:0 auto;padding:16px}
+.note{background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;color:var(--mut);font-size:12.5px;margin-bottom:16px}
+h2{font-size:17px;margin:22px 0 8px;color:var(--c)}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.game{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.row{display:flex;justify-content:space-between;padding:3px 0}
+.row.w{font-weight:700}.row:not(.w){color:var(--mut)}
+.date{font-size:12px;color:var(--mut)}
+.scroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:420px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--mut);text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+.leaders{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.lc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.lc h3{margin:0 0 6px;font-size:13px;color:var(--mut);text-transform:uppercase}
+.lc div{display:flex;justify-content:space-between;padding:2px 0}
+.lc div:first-of-type{font-weight:700}
+.lc span:last-child{color:var(--c);font-weight:700}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<header>
+<h1>🏀 Baschet Live</h1>
+<p class="sub">Rezultate, clasamente și statistici – NBA și EuroLeague</p>
+</header>
+<div class="tabs" role="tablist">
+<button class="tab" role="tab" id="t-nba" aria-selected="true" style="--c:var(--acc)">NBA</button>
+<button class="tab" role="tab" id="t-eur" aria-selected="false" style="--c:var(--acc2)">EuroLeague</button>
+</div>
+<main id="app"></main>
+<footer>Date din surse publice, la 16 oct. 2026. Pot conține erori.</footer>
+
+<script>
+// ===== DATE (instantaneu din 16 oct. 2026) =====
+const DATA={
+nba:{c:"var(--acc)",
+ mesaj:"Sezonul regulat NBA 2026-27 începe pe 20 octombrie, deci nu există încă rezultate sau clasament.",
+ rezultate:[],
+ urmeaza:[["Detroit Pistons","Boston Celtics","Mar 20 oct., 22:00"],["New York Knicks","Philadelphia 76ers","Mie 21 oct., 02:00"],["San Antonio Spurs","Oklahoma City Thunder","Mie 21 oct., 04:30"],["Orlando Magic","Atlanta Hawks","Joi 22 oct., 02:00"],["Washington Wizards","Milwaukee Bucks","Joi 22 oct., 02:00"],["Miami Heat","Minnesota Timberwolves","Joi 22 oct., 02:30"],["Toronto Raptors","Chicago Bulls","Joi 22 oct., 02:30"],["Los Angeles Lakers","Golden State Warriors","Joi 22 oct., 05:00"]],
+ clasamente:[],performeri:[]},
+eur:{c:"var(--acc2)",
+ mesaj:"Date din presă, până la 15 oct. 2026. Nu sunt incluse toate meciurile etapei (scorurile Fenerbahce–Žalgiris și Crvena zvezda–ASVEL nu au fost găsite).",
+ rezultate:[
+  ["Fenerbahce",74,"Partizan",65,"15 oct."],
+  ["Partizan",55,"Panathinaikos",72,"13 oct."],
+  ["Valencia Basket",97,"Olympiacos",102,"13 oct. · după prelungiri"],
+  ["Baskonia",84,"Beşiktaş",92,"9 oct."],
+  ["Panathinaikos",92,"Fenerbahce",74,"8 oct."],
+  ["Valencia Basket",93,"Hapoel Tel Aviv",82,"8 oct."],
+  ["Real Madrid",86,"Partizan",76,"8 oct."],
+  ["Maccabi Tel Aviv",97,"Olimpia Milano",79,"8 oct."],
+  ["Bayern München",87,"Virtus Bologna",94,"8 oct."]],
+ urmeaza:[],
+ clasamente:[["Clasament (parțial, primele locuri)",[["Panathinaikos",5,0],["Fenerbahce",5,1],["Olympiacos",4,1]]]],
+ performeri:[["Mathias Lessort","Panathinaikos","19","8","1"],["Kameron Taylor","Valencia","17","5","–"],["TJ Shorts","Valencia","15","–","7"],["Talen Horton-Tucker","Fenerbahce","14","6","5"],["Braxton Key","Fenerbahce","13","7","–"],["Ethan Thompson","Partizan","13","–","–"]]}
+};
+// ===== ACTUALIZARE AUTOMATĂ A REZULTATELOR =====
+// După ce publici worker.js, pune adresa lui aici. Lasă gol = date statice.
+const API_URL="https://nameless-lab-6a06.raducara22.workers.dev/";   // ex.: "https://baschet.contul-tau.workers.dev"
+const INTERVAL_SEC=60;
+let curent='nba';
+async function sync(){
+ if(!API_URL)return;
+ for(const [k,liga] of [['nba','nba'],['eur','euroleague']]){
+  try{
+   const r=await fetch(`${API_URL}?liga=${liga}`);
+   const rez=await r.json();            // [[gazda,scor,oaspete,scor,data],...] doar meciuri terminate
+   if(Array.isArray(rez)&&rez.length)DATA[k].rezultate=rez;
+  }catch(e){console.warn('Actualizare eșuată',liga,e)}
+ }
+ render(curent);
+}
+setInterval(sync,INTERVAL_SEC*1000);sync();
+const app=document.getElementById('app'),tabs={nba:document.getElementById('t-nba'),eur:document.getElementById('t-eur')};
+function render(k){
+ curent=k;const d=DATA[k];
+ Object.entries(tabs).forEach(([n,b])=>b.setAttribute('aria-selected',n===k));
+ let h=`<div class="note">${d.mesaj}</div><div style="--c:${d.c}">`;
+ h+='<h2>Ultimele rezultate</h2>';
+ h+=d.rezultate.length?'<div class="games">'+d.rezultate.map(g=>{
+  const a=g[1]>g[3];
+  return `<div class="game"><div class="date">${g[4]} · Final</div><div class="row ${a?'w':''}"><span>${g[0]}</span><span>${g[1]}</span></div><div class="row ${a?'':'w'}"><span>${g[2]}</span><span>${g[3]}</span></div></div>`}).join('')+'</div>':'<p class="date">Niciun rezultat încă.</p>';
+ if(d.urmeaza.length)h+='<h2>Meciuri următoare (ora României)</h2><div class="games">'+d.urmeaza.map(g=>`<div class="game"><div class="date">${g[2]}</div><div class="row"><span>${g[0]}</span></div><div class="row"><span>${g[1]}</span></div></div>`).join('')+'</div>';
+ d.clasamente.forEach(([t,rows])=>{
+  h+=`<h2>${t}</h2><div class="scroll"><table><tr><th>Echipa</th><th>V</th><th>Î</th><th>% V</th></tr>`+
+  rows.map((r,i)=>`<tr><td>${i+1}. ${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${(r[1]/(r[1]+r[2])*100).toFixed(0)}%</td></tr>`).join('')+'</table></div>';
+ });
+ if(d.performeri.length)h+='<h2>Performeri recenți</h2><div class="scroll"><table><tr><th>Jucător</th><th>Echipa</th><th>Pct</th><th>Rec</th><th>PD</th></tr>'+d.performeri.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td><td>${p[4]}</td></tr>`).join('')+'</table></div><p class="date">Pct = puncte, Rec = recuperări, PD = pase decisive, într-un meci.</p>';
+ h+='<p class="date" style="margin-top:14px">V = victorii, Î = înfrângeri, % V = procent de victorii.</p></div>';
+ app.innerHTML=h;
+}
+tabs.nba.onclick=()=>render('nba');tabs.eur.onclick=()=>render('eur');
+render('nba');
+</script>
+</body>
+</html>
